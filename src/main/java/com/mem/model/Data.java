@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class Data {
-    private int id;
+
     private int year;
     private int month;
     private int day;

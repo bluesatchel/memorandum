@@ -1,5 +1,6 @@
 package com.mem.controller;
 
+import com.alibaba.fastjson.JSON;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.mem.mapper.*;
 import com.mem.model.Data;
@@ -7,24 +8,27 @@ import com.mem.model.R;
 import com.mem.model.User;
 import com.mem.model.Word;
 import com.mem.model.vo.AddWord;
-import com.mem.model.vo.AddWords;
-import com.mem.model.vo.ReturnWord;
+
 import com.mem.service.WordService;
 import com.mem.utils.UUIDUtil;
+import com.mem.utils.WordUtil;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.List;
-import java.util.TimeZone;
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.*;
 
+@Slf4j
 @Api(tags = "单词管理")
 @RestController
 @RequestMapping("/word")
@@ -39,25 +43,60 @@ public class WordController {
     DataMapper dataMapper;
 
 
-
     @ApiOperation(value = "添加一个单词", notes = "传递一个uid和单词")
     @PostMapping("addWord")
 
-    public R addWord(@RequestBody AddWord addWord) {
+    public R addWord(@RequestBody AddWord addWord) throws Exception {
+        R r = new R(R.FAIL, "添加失败");
+        String target = addWord.getValue();
+        String cmd = "python3 /root/verify.py " + target;
+        //String cmd="python H:\\python\\verify.py "+target;
+        Process process = null;
+        process = Runtime.getRuntime().exec(cmd);
+        InputStreamReader inputStreamReader = new InputStreamReader(process.getInputStream());
+        BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
+        String res = bufferedReader.readLine();
+        //是单词
+        if (res.equals("True")) {
+
+            TimeZone.setDefault(TimeZone.getTimeZone("GMT+8"));
+            //设置时区
+            Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone("GMT+8"));
+            boolean flag = false;
+            Word word = new Word(addWord.getUid(), UUIDUtil.getUUID32(), addWord.getValue(), String.valueOf(System.currentTimeMillis()), calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH) + 1, calendar.get(Calendar.DATE));
+            flag = wordMapper.insertWord(word);
+            if (flag) {
+                r.setStatus(R.SUCCESS);
+                r.setMessage("添加成功");
+            }
+        } else {
+            r.setStatus(R.FAIL);
+            r.setMessage("输入的单词不正确!");
+        }
+
+
+        return r;
+    }
+
+    @ApiOperation(value = "添加一个短语或者句子", notes = "传递一个uid和value")
+    @PostMapping("addGroup")
+    //类就先用AddWord顶替一下
+    public R addGroup(@RequestBody AddWord addWord) throws Exception {
+        R r = new R(R.FAIL, "添加失败");
+
         TimeZone.setDefault(TimeZone.getTimeZone("GMT+8"));
         //设置时区
         Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone("GMT+8"));
-
         boolean flag = false;
-        R r = new R(R.FAIL, "添加失败");
-        Word word = new Word(addWord.getUid(),UUIDUtil.getUUID32(), addWord.getValue(), String.valueOf(System.currentTimeMillis()),calendar.get(Calendar.YEAR),calendar.get(Calendar.MONTH)+1,calendar.get(Calendar.DATE));
+        Word word = new Word(addWord.getUid(), UUIDUtil.getUUID32(), addWord.getValue(), String.valueOf(System.currentTimeMillis()), calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH) + 1, calendar.get(Calendar.DATE));
+        //一起插入到单词表里面,目前量不大,后期背写作大了再单独分表
         flag = wordMapper.insertWord(word);
-
         if (flag) {
             r.setStatus(R.SUCCESS);
             r.setMessage("添加成功");
-
         }
+
+
         return r;
     }
 
@@ -70,13 +109,9 @@ public class WordController {
 
         r.setStatus(R.SUCCESS);
         r.setMessage("获取成功");
-        ArrayList<String> values = new ArrayList<>();
-        for (Word word : todayWords
-        ) {
-            values.add(word.getValue());
 
-        }
-        r.setData(values);
+
+        r.setData(todayWords);
         return r;
     }
 
@@ -120,13 +155,51 @@ public class WordController {
         TimeZone.setDefault(TimeZone.getTimeZone("GMT+8"));
         //设置时区
         Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone("GMT+8"));
-        List<Data> oneMonth = dataMapper.getOneMonth(uid, calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH)+1);
+        List<Data> oneMonth = dataMapper.getOneMonth(uid, calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH) + 1);
 
 
-        if(oneMonth.size()!=0){
+        if (oneMonth.size() != 0) {
             r.setData(oneMonth);
             r.setStatus(R.SUCCESS);
             r.setMessage("获取成功");
+        }
+
+
+        return r;
+    }
+
+    @ApiOperation(value = "获取单词的数据", notes = "获取单词数据,如果前端查不到的话,再去请求有道的接口")
+    @PostMapping("getWordInfo")
+    public R getWordInfo(String word) {
+        BufferedReader reader;
+
+        R r = new R(R.FAIL, "获取失败");
+
+        HashMap<String, String> words = WordUtil.getWords();
+        if (words.containsKey(word)) {
+            try {
+                StringBuilder sb = new StringBuilder();
+
+                reader = new BufferedReader(new FileReader(
+                        "/root/dict/" + words.get(word)));
+                String line = reader.readLine();
+                while (line != null) {
+                    sb.append(line);
+                    // read next line
+                    line = reader.readLine();
+                }
+                reader.close();
+                Object parse = JSON.parse(sb.toString());
+                r.setData(parse);
+                r.setStatus(R.SUCCESS);
+                r.setMessage("获取成功");
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        } else {
+            log.info("{}没有数据", word);
+            r.setStatus(R.NOT_FOUND);
+            r.setMessage("获取失败");
         }
 
 

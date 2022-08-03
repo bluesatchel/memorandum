@@ -10,6 +10,7 @@ import lombok.NoArgsConstructor;
 public class R {
 
     public static int SUCCESS=200;
+    public static int NOT_FOUND=400;
     public static int FAIL=500;
 
     private int status;

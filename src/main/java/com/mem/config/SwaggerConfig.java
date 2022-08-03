@@ -23,7 +23,7 @@ public class SwaggerConfig {
         return new Docket(DocumentationType.SWAGGER_2)
                 .apiInfo(apiInfo())
                 //关闭swagger
-               .enable(false)
+               //.enable(false)
                 .select()
                 .apis(RequestHandlerSelectors.basePackage("com.mem.controller"))
                 .build();

@@ -1,25 +1,33 @@
 package com.mem;
 
-import com.mem.model.Word;
-import com.mem.mapper.WordMapper;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.springframework.beans.factory.annotation.Autowired;
+
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 
 @SpringBootTest
 @RunWith(SpringJUnit4ClassRunner.class)
 public class test {
-    @Autowired
-    private WordMapper wordMapper;
-    @Test
-    public void testWord(){
-        long a=System.currentTimeMillis()/1000/(60*60*24);
-        System.out.println(a);
-        long b=1658161794000l/1000/(60*60*24);
 
-        System.out.println(b);
+    @Test
+    public void testWord() throws Exception{
+        String word="hello";
+        String cmd="python H:\\python\\verify.py "+word;
+        Process process=null;
+        process = Runtime.getRuntime().exec(cmd);
+        InputStreamReader inputStreamReader = new InputStreamReader(process.getInputStream());
+        BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
+        String res=bufferedReader.readLine();
+        if(res.equals("True")){
+            System.out.println("是单词");
+        }else{
+            System.out.println("不是单词");
+        }
+
 
     }
 }

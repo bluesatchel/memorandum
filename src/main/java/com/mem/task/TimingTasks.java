@@ -3,7 +3,7 @@ package com.mem.task;
 import com.mem.mapper.DataMapper;
 import com.mem.mapper.UserMapper;
 import com.mem.mapper.WordMapper;
-import com.mem.service.WordService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component;
 import java.util.Calendar;
 import java.util.List;
 import java.util.TimeZone;
-
+@Slf4j
 @Component
 public class TimingTasks {
     @Autowired
@@ -24,7 +24,7 @@ public class TimingTasks {
     DataMapper dataMapper;
     @Scheduled(cron = "0 0 0 * * ?")
     public void updatePointer(){
-        System.out.println("更新pointer");
+        log.info("更新pointer");
         wordMapper.updatePointer();
 
 
