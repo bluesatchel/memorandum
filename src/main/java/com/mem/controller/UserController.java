@@ -6,6 +6,7 @@ import com.mem.model.User;
 import com.mem.utils.UUIDUtil;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import net.dreamlu.mica.xss.core.XssCleanIgnore;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -14,6 +15,7 @@ import java.util.Objects;
 @Api(tags = "用户管理")
 @RestController
 @RequestMapping("/user")
+
 public class UserController {
     @Autowired
     UserMapper userMapper;

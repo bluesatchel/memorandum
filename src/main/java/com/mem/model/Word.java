@@ -1,5 +1,6 @@
 package com.mem.model;
 
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableName;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
@@ -28,8 +29,10 @@ public class Word {
     private int year;
     private int month;
     private int day;
+    @TableField("custom_translation")
+    private String customTranslation;
 
-    public Word(String uid, String wid, String value, String time, int year, int month, int day) {
+    public Word(String uid, String wid, String value, String time, int year, int month, int day,String customTranslation) {
         this.uid = uid;
         this.wid = wid;
         this.value = value;
@@ -38,5 +41,6 @@ public class Word {
         this.year = year;
         this.month = month;
         this.day = day;
+        this.customTranslation=customTranslation;
     }
 }

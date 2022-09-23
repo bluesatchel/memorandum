@@ -5,10 +5,12 @@ import com.mem.model.Index;
 import com.mem.model.R;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import net.dreamlu.mica.xss.core.XssCleanIgnore;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PostMapping;
 
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.util.HtmlUtils;
 
 @Api(tags = "主页展示信息")
 @RestController
@@ -25,6 +27,7 @@ public class IndexController {
         r.setMessage("获取成功");
         r.setData(one);
         r.setStatus(R.SUCCESS);
+
 
         return r;
     }

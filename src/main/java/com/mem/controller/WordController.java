@@ -7,6 +7,7 @@ import com.mem.model.Data;
 import com.mem.model.R;
 import com.mem.model.User;
 import com.mem.model.Word;
+import com.mem.model.vo.AddSentence;
 import com.mem.model.vo.AddWord;
 
 import com.mem.service.WordService;
@@ -16,6 +17,7 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 
 import lombok.extern.slf4j.Slf4j;
+import net.dreamlu.mica.xss.core.XssCleanIgnore;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -32,6 +34,7 @@ import java.util.*;
 @Api(tags = "单词管理")
 @RestController
 @RequestMapping("/word")
+
 public class WordController {
     @Autowired
     WordService wordService;
@@ -63,7 +66,7 @@ public class WordController {
             //设置时区
             Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone("GMT+8"));
             boolean flag = false;
-            Word word = new Word(addWord.getUid(), UUIDUtil.getUUID32(), addWord.getValue(), String.valueOf(System.currentTimeMillis()), calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH) + 1, calendar.get(Calendar.DATE));
+            Word word = new Word(addWord.getUid(), UUIDUtil.getUUID32(), addWord.getValue(), String.valueOf(System.currentTimeMillis()), calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH) + 1, calendar.get(Calendar.DATE),null);
             flag = wordMapper.insertWord(word);
             if (flag) {
                 r.setStatus(R.SUCCESS);
@@ -80,15 +83,15 @@ public class WordController {
 
     @ApiOperation(value = "添加一个短语或者句子", notes = "传递一个uid和value")
     @PostMapping("addGroup")
-    //类就先用AddWord顶替一下
-    public R addGroup(@RequestBody AddWord addWord) throws Exception {
+
+    public R addGroup(@RequestBody AddSentence addSentence) throws Exception {
         R r = new R(R.FAIL, "添加失败");
 
         TimeZone.setDefault(TimeZone.getTimeZone("GMT+8"));
         //设置时区
         Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone("GMT+8"));
         boolean flag = false;
-        Word word = new Word(addWord.getUid(), UUIDUtil.getUUID32(), addWord.getValue(), String.valueOf(System.currentTimeMillis()), calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH) + 1, calendar.get(Calendar.DATE));
+        Word word = new Word(addSentence.getUid(), UUIDUtil.getUUID32(), addSentence.getValue(), String.valueOf(System.currentTimeMillis()), calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH) + 1, calendar.get(Calendar.DATE),addSentence.getCustomTranslation());
         //一起插入到单词表里面,目前量不大,后期背写作大了再单独分表
         flag = wordMapper.insertWord(word);
         if (flag) {
@@ -115,17 +118,100 @@ public class WordController {
         return r;
     }
 
-    @ApiOperation(value = "标记不会的单词", notes = "标记不会的单词,并且将日期顺延到明天推送,但是好像标记没啥用,直接把pointer置0就行了")
+    @ApiOperation(value = "随机获取100个单词", notes = "直接Post带uid请求")
+    @PostMapping("randomWords")
+    public R getRandomWords(@RequestBody User user) {
+        R r = new R(R.FAIL, "获取失败");
+
+        List<Word> randomWords = wordMapper.getRandomWords(user.getUid());
+
+        r.setStatus(R.SUCCESS);
+        r.setMessage("获取成功");
+
+
+        r.setData(randomWords);
+        return r;
+    }
+    @ApiOperation(value = "随机获取100个超过30天的单词", notes = "直接Post带uid请求")
+    @PostMapping("randomFinishedWords")
+    public R getRandomFinishedWords(@RequestBody User user) {
+        R r = new R(R.FAIL, "获取失败");
+
+        List<Word> randomWords = wordMapper.getRandomFinishedWords(user.getUid());
+
+        r.setStatus(R.SUCCESS);
+        r.setMessage("获取成功");
+
+
+        r.setData(randomWords);
+        return r;
+    }
+
+    @ApiOperation(value = "获取全部超过30天的数据", notes = "直接Post带uid请求")
+    @PostMapping("allFinishedWords")
+    public R getFinishedWords(@RequestBody User user) {
+        R r = new R(R.FAIL, "获取失败");
+
+        List<Word> todayWords = wordMapper.getFinishedWords(user.getUid());
+
+        r.setStatus(R.SUCCESS);
+        r.setMessage("获取成功");
+
+
+        r.setData(todayWords);
+        return r;
+    }
+    @ApiOperation(value = "获取超过30天且被标记的数据", notes = "直接Post带uid请求")
+    @PostMapping("finishedMarkedWords")
+    public R getFinishedMarkedWords(@RequestBody User user) {
+        R r = new R(R.FAIL, "获取失败");
+
+        List<Word> todayWords = wordMapper.getFinishedMarkedWords(user.getUid());
+
+        r.setStatus(R.SUCCESS);
+        r.setMessage("获取成功");
+
+
+        r.setData(todayWords);
+        return r;
+    }
+
+    @ApiOperation(value = "获取被标记的数据", notes = "直接Post带uid请求")
+    @PostMapping("markedWords")
+    public R getMarkedWords(@RequestBody User user) {
+        R r = new R(R.FAIL, "获取失败");
+
+        List<Word> todayWords = wordMapper.getMarkedWords(user.getUid());
+
+        r.setStatus(R.SUCCESS);
+        r.setMessage("获取成功");
+
+
+        r.setData(todayWords);
+        return r;
+    }
+
+
+
+    @ApiOperation(value = "标记数据", notes = "标记数据,直接传wid即可")
     @PostMapping("mark")
-    public R markWords(@RequestBody String wid) {
+    public R markWords(String wid) {
+        R r = new R(R.FAIL, "标记失败");
+        boolean flag = false;
+        Word oneWord = wordMapper.getOneWord(wid);
 
-        boolean flag = wordMapper.markWord(wid);
-
-        R r = new R(R.FAIL, "修改失败");
+        //做出判断,如果已经被标记则取消标记,未被标记则进行标记
+        if(oneWord.getMarked()==0){
+            flag=wordMapper.markWord(wid);
+            r.setMessage("标记成功");
+        }else {
+            flag=wordMapper.unmarkWord(wid);
+            r.setMessage("取消标记成功");
+        }
 
         if (flag) {
             r.setStatus(R.SUCCESS);
-            r.setMessage("修改成功");
+
         }
 
 
