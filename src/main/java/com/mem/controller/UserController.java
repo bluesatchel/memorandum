@@ -62,7 +62,7 @@ public class UserController {
     @ApiOperation(value = "退出登录",notes = "退出登录")
     @PostMapping("/logout")
     public R logout(){
-        R r = new R(R.FAIL, "登录失败");
+        R r = new R(R.FAIL, "退出成功");
 
         //TODO 用户校验入库
 

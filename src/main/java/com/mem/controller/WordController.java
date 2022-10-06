@@ -195,17 +195,17 @@ public class WordController {
 
     @ApiOperation(value = "标记数据", notes = "标记数据,直接传wid即可")
     @PostMapping("mark")
-    public R markWords(String wid) {
+    public R markWords(@RequestBody Word word) {
         R r = new R(R.FAIL, "标记失败");
         boolean flag = false;
-        Word oneWord = wordMapper.getOneWord(wid);
+        Word oneWord = wordMapper.getOneWord(word.getWid());
 
         //做出判断,如果已经被标记则取消标记,未被标记则进行标记
         if(oneWord.getMarked()==0){
-            flag=wordMapper.markWord(wid);
+            flag=wordMapper.markWord(word.getWid());
             r.setMessage("标记成功");
         }else {
-            flag=wordMapper.unmarkWord(wid);
+            flag=wordMapper.unmarkWord(word.getWid());
             r.setMessage("取消标记成功");
         }
 
@@ -236,12 +236,51 @@ public class WordController {
 
     @ApiOperation(value = "获取本月数据", notes = "直接Post带uid请求")
     @PostMapping("thisMonthData")
-    public R getThisMonthData(String uid) {
+    public R getThisMonthData(@RequestBody User user) {
         R r = new R(R.FAIL, "获取失败");
         TimeZone.setDefault(TimeZone.getTimeZone("GMT+8"));
         //设置时区
         Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone("GMT+8"));
-        List<Data> oneMonth = dataMapper.getOneMonth(uid, calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH) + 1);
+        List<Data> oneMonth = dataMapper.getOneMonth(user.getUid(), calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH) + 1);
+
+
+        if (oneMonth.size() != 0) {
+            r.setData(oneMonth);
+            r.setStatus(R.SUCCESS);
+            r.setMessage("获取成功");
+        }
+
+
+        return r;
+    }
+    @ApiOperation(value = "获取某月数据", notes = "直接Post带uid和月份请求")
+    @PostMapping("oneMonthData")
+    public R getOneMonthData(String uid,int month) {
+        R r = new R(R.FAIL, "获取失败");
+        TimeZone.setDefault(TimeZone.getTimeZone("GMT+8"));
+        //设置时区
+        Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone("GMT+8"));
+        List<Data> oneMonth = dataMapper.getOneMonth(uid, calendar.get(Calendar.YEAR), month);
+        if (oneMonth.size() != 0) {
+            r.setData(oneMonth);
+            r.setStatus(R.SUCCESS);
+            r.setMessage("获取成功");
+        }
+        return r;
+    }
+
+
+
+
+    @ApiOperation(value = "获取本年的有数据的月份", notes = "直接Post带uid请求")
+    @PostMapping("getMonthes")
+    public R getMonthes(@RequestBody User user) {
+        R r = new R(R.FAIL, "获取失败");
+        TimeZone.setDefault(TimeZone.getTimeZone("GMT+8"));
+        //设置时区
+        Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone("GMT+8"));
+        List<Integer> oneMonth = dataMapper.getMonthes(user.getUid(), calendar.get(Calendar.YEAR));
+
 
 
         if (oneMonth.size() != 0) {
@@ -254,20 +293,48 @@ public class WordController {
         return r;
     }
 
+
+
+
+
+
+
+    @ApiOperation(value = "获取本年的数据", notes = "直接Post带uid请求")
+    @PostMapping("thisYearData")
+    public R getThisYearData(@RequestBody User user) {
+        R r = new R(R.FAIL, "获取失败");
+        TimeZone.setDefault(TimeZone.getTimeZone("GMT+8"));
+        //设置时区
+        Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone("GMT+8"));
+        List<Data> oneMonth = dataMapper.getOneYear(user.getUid(), calendar.get(Calendar.YEAR));
+
+
+
+        if (oneMonth.size() != 0) {
+            r.setData(oneMonth);
+            r.setStatus(R.SUCCESS);
+            r.setMessage("获取成功");
+        }
+
+
+        return r;
+    }
+
+
     @ApiOperation(value = "获取单词的数据", notes = "获取单词数据,如果前端查不到的话,再去请求有道的接口")
     @PostMapping("getWordInfo")
-    public R getWordInfo(String word) {
+    public R getWordInfo(@RequestBody Word word) {
         BufferedReader reader;
 
         R r = new R(R.FAIL, "获取失败");
 
         HashMap<String, String> words = WordUtil.getWords();
-        if (words.containsKey(word)) {
+        if (words.containsKey(word.getValue())) {
             try {
                 StringBuilder sb = new StringBuilder();
 
                 reader = new BufferedReader(new FileReader(
-                        "/root/dict/" + words.get(word)));
+                        "/root/dict/" + words.get(word.getValue())));
                 String line = reader.readLine();
                 while (line != null) {
                     sb.append(line);
@@ -283,7 +350,7 @@ public class WordController {
                 e.printStackTrace();
             }
         } else {
-            log.info("{}没有数据", word);
+            log.info("{}没有数据", word.getValue());
             r.setStatus(R.NOT_FOUND);
             r.setMessage("获取失败");
         }
