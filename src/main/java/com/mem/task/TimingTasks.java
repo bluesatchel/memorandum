@@ -30,7 +30,7 @@ public class TimingTasks {
 
 
     }
-    @Scheduled(cron = "0 * * * * ?")
+    @Scheduled(cron = "0 */10 * * * ?")
     public void updateNum(){
         //更新单词数据的统计,每分钟更新一次
         TimeZone.setDefault(TimeZone.getTimeZone("GMT+8"));
