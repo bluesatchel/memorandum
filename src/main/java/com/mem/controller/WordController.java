@@ -132,6 +132,24 @@ public class WordController {
         r.setData(randomWords);
         return r;
     }
+
+
+    @ApiOperation(value = "获取今天添加的单词", notes = "直接Post带uid请求")
+    @PostMapping("getAddedWords")
+    public R getAddedWords(@RequestBody User user) {
+        R r = new R(R.FAIL, "获取失败");
+
+        List<Word> randomWords = wordMapper.getAddedWords(user.getUid());
+
+        r.setStatus(R.SUCCESS);
+        r.setMessage("获取成功");
+
+
+        r.setData(randomWords);
+        return r;
+    }
+
+
     @ApiOperation(value = "随机获取100个超过30天的单词", notes = "直接Post带uid请求")
     @PostMapping("randomFinishedWords")
     public R getRandomFinishedWords(@RequestBody User user) {
