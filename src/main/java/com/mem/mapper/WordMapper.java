@@ -44,6 +44,12 @@ public interface WordMapper extends BaseMapper<Word> {
     @Select("select * from `mem`.`words` where uid=#{uid} and pointer in (1,2,4,7,15,30) order by id")
     List<Word> getTodayWords(@Param("uid") String uid);
 
+
+    //获取今日单词中被标记的单词
+    @Select("select * from `mem`.`words` where uid=#{uid} and pointer in (1,2,4,7,15,30) and marked = 1 order by id")
+    List<Word> getTodayMarkedWords(@Param("uid") String uid);
+
+
     @Select("select * from `mem`.`words` where uid=#{uid} and pointer =0 order by id")
     List<Word> getAddedWords(@Param("uid") String uid);
     /**
@@ -82,6 +88,10 @@ public interface WordMapper extends BaseMapper<Word> {
             "order by id " +
             "limit 100")
     List<Word> getRandomFinishedWords(@Param("uid") String uid);
+
+
+    @Select("select * from `mem`.`words` where value = #{value} and pointer = 0")
+    List<Word> isAddedToday(@Param("value") String value);
 
 
 

@@ -46,12 +46,19 @@ public class WordController {
     DataMapper dataMapper;
 
 
+
     @ApiOperation(value = "添加一个单词", notes = "传递一个uid和单词")
     @PostMapping("addWord")
-
     public R addWord(@RequestBody AddWord addWord) throws Exception {
         R r = new R(R.FAIL, "添加失败");
         String target = addWord.getValue();
+        //判断是否今日已经添加
+        List<Word> list = wordMapper.isAddedToday(target);
+        if(list.size()!=0){
+            return new R(R.FAIL, "今天已经添加过该数据了");
+
+        }
+
         String cmd = "python3 /root/verify.py " + target;
         //String cmd="python H:\\python\\verify.py "+target;
         Process process = null;
@@ -86,6 +93,14 @@ public class WordController {
 
     public R addGroup(@RequestBody AddSentence addSentence) throws Exception {
         R r = new R(R.FAIL, "添加失败");
+
+        //判断是否今日已经添加
+        List<Word> list = wordMapper.isAddedToday(addSentence.getValue());
+        if(list.size()!=0){
+            return new R(R.FAIL, "今天已经添加过该数据了");
+
+        }
+
 
         TimeZone.setDefault(TimeZone.getTimeZone("GMT+8"));
         //设置时区
@@ -200,6 +215,24 @@ public class WordController {
         R r = new R(R.FAIL, "获取失败");
 
         List<Word> todayWords = wordMapper.getMarkedWords(user.getUid());
+
+        r.setStatus(R.SUCCESS);
+        r.setMessage("获取成功");
+
+
+        r.setData(todayWords);
+        return r;
+    }
+
+
+
+
+    @ApiOperation(value = "获取今日单词中被标记的单词", notes = "直接json带uid请求")
+    @PostMapping("todayMarkedWords")
+    public R getTodayMarkedWords(@RequestBody User user) {
+        R r = new R(R.FAIL, "获取失败");
+
+        List<Word> todayWords = wordMapper.getTodayMarkedWords(user.getUid());
 
         r.setStatus(R.SUCCESS);
         r.setMessage("获取成功");
